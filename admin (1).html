@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Agent's Edge — Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2234;
+    --border: #1f2d45;
+    --accent: #2563eb;
+    --accent2: #3b82f6;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --soft: #94a3b8;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  /* ── Login ── */
+  #adminLogin {
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; z-index:9999;
+  }
+  .al-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:44px 40px; width:380px;
+    box-shadow:0 40px 80px rgba(0,0,0,.6);
+  }
+  .al-logo { font-size:28px; margin-bottom:6px; }
+  .al-title { font-size:24px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .al-sub { font-size:13px; color:var(--muted); margin-bottom:30px; }
+  .al-badge { display:inline-block; background:#1e3a5f; color:#60a5fa; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; margin-bottom:20px; letter-spacing:.5px; }
+  .al-input { width:100%; padding:12px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-size:14px; font-family:inherit; margin-bottom:12px; outline:none; transition:border .2s; }
+  .al-input:focus { border-color:var(--accent); }
+  .al-btn { width:100%; padding:13px; background:var(--accent); color:white; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .2s; }
+  .al-btn:hover { background:var(--accent2); }
+  .al-err { color:var(--red); font-size:12px; margin-top:8px; display:none; font-weight:600; }
+
+  /* ── Layout ── */
+  #adminApp { display:none; }
+  .topbar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 32px; height:60px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100;
+  }
+  .topbar-left { display:flex; align-items:center; gap:12px; }
+  .topbar-logo { font-size:18px; font-weight:800; color:var(--text); }
+  .topbar-badge { background:#1e3a5f; color:#60a5fa; font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; letter-spacing:.5px; }
+  .topbar-right { display:flex; align-items:center; gap:16px; }
+  .admin-name { font-size:13px; color:var(--muted); }
+  .logout-btn { background:var(--surface2); border:1px solid var(--border); color:var(--soft); padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer; font-family:inherit; transition:all .2s; }
+  .logout-btn:hover { border-color:var(--red); color:var(--red); }
+
+  .main { padding:32px; max-width:1200px; margin:0 auto; }
+
+  /* ── Stats ── */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
+  .stat-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  .stat-value { font-size:32px; font-weight:800; color:var(--text); }
+  .stat-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+  .stat-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+
+  /* ── Section ── */
+  .section { background:var(--surface); border:1px solid var(--border); border-radius:16px; margin-bottom:24px; overflow:hidden; }
+  .section-head { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .section-title { font-size:15px; font-weight:700; }
+  .section-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  /* ── Add Agent Form ── */
+  .add-form { padding:24px; display:none; border-bottom:1px solid var(--border); background:var(--surface2); }
+  .add-form.open { display:block; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .form-group label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; display:block; margin-bottom:5px; }
+  .form-input { width:100%; padding:10px 12px; background:var(--surface); border:1.5px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:inherit; outline:none; transition:border .2s; }
+  .form-input:focus { border-color:var(--accent); }
+  .form-input::placeholder { color:var(--muted); }
+  .form-actions { display:flex; gap:10px; }
+  .btn-primary { background:var(--accent); color:white; border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-secondary { background:var(--surface); color:var(--soft); border:1px solid var(--border); border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-add { background:var(--accent); color:white; border:none; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:6px; }
+
+  /* ── Agent Table ── */
+  .agent-table { width:100%; border-collapse:collapse; }
+  .agent-table th { padding:12px 24px; text-align:left; font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
+  .agent-table td { padding:16px 24px; border-bottom:1px solid var(--border); font-size:13px; }
+  .agent-table tr:last-child td { border-bottom:none; }
+  .agent-table tr:hover td { background:var(--surface2); }
+  .agent-name { font-weight:700; color:var(--text); }
+  .agent-username { font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); }
+  .agent-number { font-family:'DM Mono',monospace; font-size:12px; color:var(--soft); }
+  .status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+  .status-active { background:#065f46; color:#34d399; }
+  .status-inactive { background:#1f2d45; color:var(--muted); }
+  .action-btn { background:none; border:1px solid var(--border); color:var(--soft); padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .2s; margin-left:6px; }
+  .action-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .action-btn.danger:hover { border-color:var(--red); color:var(--red); }
+  .empty-state { padding:48px 24px; text-align:center; color:var(--muted); font-size:14px; }
+
+  /* ── PIN display ── */
+  .pin-hidden { cursor:pointer; letter-spacing:3px; color:var(--muted); font-family:'DM Mono',monospace; }
+  .pin-visible { font-family:'DM Mono',monospace; color:var(--soft); }
+
+  /* ── Toast ── */
+  #toast { position:fixed; bottom:24px; right:24px; background:var(--green); color:white; padding:12px 20px; border-radius:10px; font-size:13px; font-weight:700; display:none; z-index:99999; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  #toast.error { background:var(--red); }
+
+  /* ── Responsive ── */
+  @media(max-width:768px) {
+    .stats-grid { grid-template-columns:1fr 1fr; }
+    .form-grid { grid-template-columns:1fr; }
+    .main { padding:16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Admin Login ── -->
+<div id="adminLogin">
+  <div class="al-box">
+    <div class="al-logo">⚡</div>
+    <div class="al-title">The Agent's Edge</div>
+    <div class="al-sub">Admin Portal</div>
+    <div class="al-badge">ADMIN ACCESS ONLY</div>
+    <input class="al-input" id="adminUser" type="text" placeholder="Admin Username">
+    <input class="al-input" id="adminPass" type="password" placeholder="Admin Password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="al-btn" onclick="adminLogin()">Sign In →</button>
+    <div class="al-err" id="adminErr">Incorrect credentials.</div>
+  </div>
+</div>
+
+<!-- ── Admin App ── -->
+<div id="adminApp">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">⚡ The Agent's Edge</div>
+      <div class="topbar-badge">ADMIN</div>
+    </div>
+    <div class="topbar-right">
+      <span class="admin-name" id="adminNameDisplay"></span>
+      <button class="logout-btn" onclick="adminLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Agents</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub">registered accounts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Agents</div>
+        <div class="stat-value" id="statActive" style="color:var(--green)">0</div>
+        <div class="stat-sub"><span class="stat-dot" style="background:var(--green)"></span>enabled accounts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Inactive</div>
+        <div class="stat-value" id="statInactive" style="color:var(--muted)">0</div>
+        <div class="stat-sub">suspended accounts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Phone Numbers</div>
+        <div class="stat-value" id="statNumbers">0</div>
+        <div class="stat-sub">Twilio numbers assigned</div>
+      </div>
+    </div>
+
+    <!-- Agent Management -->
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Agent Accounts</div>
+          <div class="section-sub">Manage agent logins and Twilio credentials</div>
+        </div>
+        <button class="btn-add" onclick="toggleAddForm()">
+          <span>+</span> Add Agent
+        </button>
+      </div>
+
+      <!-- Add Agent Form -->
+      <div class="add-form" id="addForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input class="form-input" id="f_name" placeholder="e.g. John Smith">
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input class="form-input" id="f_username" placeholder="e.g. jsmith" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'');document.getElementById('f_identity').value=this.value+'_agent';">
+          </div>
+          <div class="form-group">
+            <label>PIN / Password</label>
+            <input class="form-input" id="f_pin" placeholder="e.g. 4-digit PIN">
+          </div>
+          <div class="form-group">
+            <label>Twilio Phone Number</label>
+            <input class="form-input" id="f_number" placeholder="+1xxxxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label>Agent Identity (Twilio)</label>
+            <input class="form-input" id="f_identity" placeholder="e.g. jsmith_agent">
+          </div>
+          <div class="form-group">
+            <label>Token Server URL</label>
+            <input class="form-input" id="f_token" value="https://evertrust-backend-1or5.onrender.com/token" placeholder="https://your-backend.onrender.com/token">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>TwiML App SID</label>
+            <input class="form-input" id="f_twiml" value="AP3a9c6ad4134e905e88daaa9369a2a705" placeholder="APxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" onclick="addAgent()">Add Agent</button>
+          <button class="btn-secondary" onclick="toggleAddForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Agent Table -->
+      <table class="agent-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>PIN</th>
+            <th>Phone Number</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="agentTableBody">
+          <tr><td colspan="6" class="empty-state">No agents yet — add your first agent above.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Instructions -->
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">How to Onboard a New Agent</div>
+          <div class="section-sub">Step by step setup guide</div>
+        </div>
+      </div>
+      <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div style="background:var(--surface2);border-radius:10px;padding:18px;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Step 1 — Buy Twilio Number</div>
+          <div style="font-size:13px;color:var(--soft);line-height:1.7;">Log into your Twilio account → Phone Numbers → Buy a Number. Cost is ~$1/month per number. Assign it to the Evertrust Dialer TwiML app.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:18px;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Step 2 — Create Agent Identity</div>
+          <div style="font-size:13px;color:var(--soft);line-height:1.7;">Choose a unique identity string for the agent (e.g. <code style="background:#1f2d45;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;">jsmith_agent</code>). This registers them in Twilio for inbound call routing.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:18px;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Step 3 — Add Agent Here</div>
+          <div style="font-size:13px;color:var(--soft);line-height:1.7;">Fill in the Add Agent form above with their name, username, PIN, Twilio number, identity, and token server URL. Click Add Agent.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:18px;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Step 4 — Share Credentials</div>
+          <div style="font-size:13px;color:var(--soft);line-height:1.7;">Send the agent their username and PIN. Direct them to <code style="background:#1f2d45;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;">theagentsedge.com</code> to log in. That's it — they're ready to dial.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Export Agent Data</div>
+          <div class="section-sub">Download agent list for your records</div>
+        </div>
+        <button class="btn-add" style="background:var(--surface2);color:var(--soft);border:1px solid var(--border);" onclick="exportAgents()">⬇ Export CSV</button>
+      </div>
+      <div style="padding:20px 24px;font-size:13px;color:var(--muted);">
+        Download a CSV of all agent accounts (excluding PINs) for your records. Keep this backed up — agent data is stored locally in your browser.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Admin credentials ──
+const ADMIN_ACCOUNTS = [
+  { username: 'admin', password: 'agentsedge2025', name: 'Marcus Hayes (Admin)' },
+];
+
+// ── Storage ──
+function loadAgents() {
+  try { return JSON.parse(localStorage.getItem('tae_agents') || '[]'); } catch(e) { return []; }
+}
+function saveAgents(agents) {
+  try {
+    localStorage.setItem('tae_agents', JSON.stringify(agents));
+    // Also update a timestamp so the dialer knows to refresh
+    localStorage.setItem('tae_agents_updated', Date.now().toString());
+  } catch(e) {}
+}
+
+// ── Login ──
+function adminLogin() {
+  const u = document.getElementById('adminUser').value.trim().toLowerCase();
+  const p = document.getElementById('adminPass').value.trim();
+  const admin = ADMIN_ACCOUNTS.find(a => a.username.toLowerCase() === u && a.password === p);
+  if(!admin) {
+    document.getElementById('adminErr').style.display = 'block';
+    document.getElementById('adminPass').value = '';
+    return;
+  }
+  sessionStorage.setItem('tae_admin', JSON.stringify(admin));
+  document.getElementById('adminLogin').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+  document.getElementById('adminNameDisplay').textContent = admin.name;
+  renderAll();
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('tae_admin');
+  location.reload();
+}
+
+// Check existing session
+try {
+  const saved = sessionStorage.getItem('tae_admin');
+  if(saved) {
+    const admin = JSON.parse(saved);
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    document.getElementById('adminNameDisplay').textContent = admin.name;
+    renderAll();
+  }
+} catch(e) {}
+
+// ── Render ──
+function renderAll() {
+  const agents = loadAgents();
+  renderStats(agents);
+  renderTable(agents);
+}
+
+function renderStats(agents) {
+  const active = agents.filter(a => a.active !== false).length;
+  const inactive = agents.length - active;
+  const numbered = agents.filter(a => a.number).length;
+  document.getElementById('statTotal').textContent = agents.length;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statInactive').textContent = inactive;
+  document.getElementById('statNumbers').textContent = numbered;
+}
+
+function renderTable(agents) {
+  const tbody = document.getElementById('agentTableBody');
+  if(!agents.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No agents yet — add your first agent above.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = agents.map((a, i) => `
+    <tr>
+      <td><div class="agent-name">${a.name}</div></td>
+      <td><div class="agent-username">${a.username}</div></td>
+      <td>
+        <span class="pin-hidden" onclick="togglePin(this,'${a.pin}')">••••</span>
+      </td>
+      <td><div class="agent-number">${a.number || '—'}</div></td>
+      <td>
+        <span class="status-badge ${a.active !== false ? 'status-active' : 'status-inactive'}">
+          ${a.active !== false ? '● Active' : '○ Inactive'}
+        </span>
+      </td>
+      <td>
+        <button class="action-btn" onclick="toggleActive(${i})">${a.active !== false ? 'Suspend' : 'Activate'}</button>
+        <button class="action-btn danger" onclick="deleteAgent(${i})">Remove</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Add Agent ──
+function toggleAddForm() {
+  document.getElementById('addForm').classList.toggle('open');
+}
+
+function addAgent() {
+  const name     = document.getElementById('f_name').value.trim();
+  const username = document.getElementById('f_username').value.trim();
+  const pin      = document.getElementById('f_pin').value.trim();
+  const number   = document.getElementById('f_number').value.trim();
+  const identity = document.getElementById('f_identity').value.trim();
+  const token    = document.getElementById('f_token').value.trim();
+  const twiml    = document.getElementById('f_twiml').value.trim();
+
+  if(!name || !username || !pin) { showToast('Name, username and PIN are required.', true); return; }
+
+  const agents = loadAgents();
+  if(agents.find(a => a.username === username)) { showToast('Username already exists.', true); return; }
+
+  agents.push({ name, username, pin, number, identity, token_server: token, twiml_app: twiml, active: true, created: new Date().toISOString() });
+  saveAgents(agents);
+
+  // Clear form
+  ['f_name','f_username','f_pin','f_number','f_identity','f_token','f_twiml'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addForm').classList.remove('open');
+
+  renderAll();
+  showToast(`Agent "${name}" added successfully!`);
+}
+
+function toggleActive(i) {
+  const agents = loadAgents();
+  agents[i].active = agents[i].active === false ? true : false;
+  saveAgents(agents);
+  renderAll();
+  showToast(agents[i].active ? 'Agent activated.' : 'Agent suspended.');
+}
+
+function deleteAgent(i) {
+  if(!confirm('Remove this agent? This cannot be undone.')) return;
+  const agents = loadAgents();
+  const name = agents[i].name;
+  agents.splice(i, 1);
+  saveAgents(agents);
+  renderAll();
+  showToast(`Agent "${name}" removed.`);
+}
+
+function togglePin(el, pin) {
+  if(el.classList.contains('pin-hidden')) {
+    el.textContent = pin;
+    el.classList.remove('pin-hidden');
+    el.classList.add('pin-visible');
+    setTimeout(() => { el.textContent = '••••'; el.classList.remove('pin-visible'); el.classList.add('pin-hidden'); }, 3000);
+  }
+}
+
+// ── Export ──
+function exportAgents() {
+  const agents = loadAgents();
+  if(!agents.length) { showToast('No agents to export.', true); return; }
+  const rows = [['Name','Username','Phone Number','Identity','Status','Created']];
+  agents.forEach(a => rows.push([a.name, a.username, a.number||'', a.identity||'', a.active !== false ? 'Active' : 'Inactive', a.created||'']));
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = 'agents_edge_agents.csv'; link.click();
+  showToast('Exported successfully!');
+}
+
+// ── Toast ──
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
